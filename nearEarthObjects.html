@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nearEarth object</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+        }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+
+        #buttons {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .action-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            color: white;
+            background-color: #444;
+            border: 1px solid #555;
+            border-radius: 5px;
+        }
+
+        .action-button:hover {
+            background-color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Click on objects to see information.</div>
+    
+    <!-- Buttons for Near-Earth Objects -->
+    <div id="buttons">
+      
+        <button class="action-button" id="nearEarthCometsBtn">Near-Earth Objects</button>
+       
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Create the scene, camera, and renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Add orbit controls for interaction
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // Load textures for Earth and Moon GIFs
+        const earthTexture = new THREE.TextureLoader().load('https://res.cloudinary.com/yerevan/image/upload/v1484080036/earth_saibbo.gif');
+        const moonTexture = new THREE.TextureLoader().load('https://res.cloudinary.com/yerevan/image/upload/v1484080036/moon_nqqsgu.gif');
+
+        // Create the Earth with MeshBasicMaterial (No lighting effects)
+        const earthGeometry = new THREE.SphereGeometry(2, 32, 32);
+        const earthMaterial = new THREE.MeshBasicMaterial({ map: earthTexture });
+        const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+        scene.add(earth);
+
+        // Create the Moon with MeshBasicMaterial
+        const moonGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const moonMaterial = new THREE.MeshBasicMaterial({ map: moonTexture });
+        const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+        moon.position.set(5, 0, 0); // Position relative to Earth
+        earth.add(moon); // Moon orbits Earth
+
+        // Set camera position
+        camera.position.z = 15;
+
+        // Create asteroids in random positions using MeshBasicMaterial
+        const asteroidGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+        const asteroidMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+        for (let i = 0; i < 1600; i++) {
+            const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
+            asteroid.position.set(
+                Math.random() * 200 - 100, // X position
+                Math.random() * 200 - 100, // Y position
+                Math.random() * 200 - 100  // Z position
+            );
+            scene.add(asteroid);
+        }
+
+        // Create comets (blue) in random positions
+        const cometGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        const cometMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff }); // Blue color for comets
+        for (let i = 0; i < 2000; i++) {
+            const comet = new THREE.Mesh(cometGeometry, cometMaterial);
+            comet.position.set(
+                Math.random() * 200 - 100, // X position
+                Math.random() * 200 - 100, // Y position
+                Math.random() * 200 - 100  // Z position
+            );
+            scene.add(comet);
+        }
+
+        // Create potentially hazardous asteroids (red) in random positions
+        const hazardousAsteroidGeometry = new THREE.SphereGeometry(0.4, 16, 16); // Slightly larger
+        const hazardousAsteroidMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Red color for hazardous asteroids
+        for (let i = 0; i < 500; i++) {
+            const hazardousAsteroid = new THREE.Mesh(hazardousAsteroidGeometry, hazardousAsteroidMaterial);
+            hazardousAsteroid.position.set(
+                Math.random() * 200 - 100, // X position
+                Math.random() * 200 - 100, // Y position
+                Math.random() * 200 - 100  // Z position
+            );
+            scene.add(hazardousAsteroid);
+        }
+
+        // Raycaster for detecting clicks on objects
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children);
+
+            if (intersects.length > 0) {
+                const object = intersects[0].object;
+                if (object === earth) {
+                    document.getElementById('info').innerText = 'You clicked on Earth!';
+                } else if (object === moon) {
+                    document.getElementById('info').innerText = 'You clicked on the Moon!';
+                } else if (object.material.color.getHex() === 0xaaaaaa) { // Asteroid color
+                    document.getElementById('info').innerText = 'You clicked on an asteroid!';
+                } else if (object.material.color.getHex() === 0x0000ff) { // Comet color
+                    document.getElementById('info').innerText = 'You clicked on a comet!';
+                } else if (object.material.color.getHex() === 0xff0000) { // Hazardous asteroid color
+                    document.getElementById('info').innerText = 'You clicked on a potentially hazardous asteroid!';
+                }
+            }
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotate the Earth and Moon
+            earth.rotation.y += 0.01;
+            moon.rotation.y += 0.01;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+      
+        document.getElementById('nearEarthCometsBtn').addEventListener('click', () => {
+            window.location.href = 'comets.html';
+            // document.getElementById('info').innerText = 'Displaying information about Near-Earth Comets';
+        });
+
+      s
+    </script>
+</body>
+</html>
